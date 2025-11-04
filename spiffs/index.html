@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control LED ESP32</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🎛️ Control LED ESP32</h1>
+        
+        <div class="status-panel">
+            <div class="status-item">
+                <span class="label">Conexión:</span>
+                <span id="connectionStatus" class="status disconnected">Desconectado</span>
+            </div>
+            <div class="status-item">
+                <span class="label">LED GPIO2:</span>
+                <span id="ledStatus" class="status off">APAGADO</span>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <button id="btnOn" class="btn btn-on" onclick="sendCommand('ON')">
+                🔥 ENCENDER
+            </button>
+            <button id="btnOff" class="btn btn-off" onclick="sendCommand('OFF')">
+                💤 APAGAR
+            </button>
+            <button id="btnToggle" class="btn btn-toggle" onclick="sendCommand('TOGGLE')">
+                🔄 TOGGLE
+            </button>
+        </div>
+
+        <div class="info">
+            <p>Conectado al ESP32 vía WebSocket - GPIO2</p>
+        </div>
+    </div>
+
+    <script src="websocket.js"></script>
+    
+    <script>
+        // Función global para los botones
+        function sendCommand(cmd) {
+            console.log('🔄 Botón presionado, enviando comando:', cmd);
+            if (window.wsController) {
+                window.wsController.sendCommand(cmd);
+            } else {
+                console.error('❌ Controlador WebSocket no disponible');
+                alert('WebSocket no conectado. Recarga la página.');
+            }
+        }
+        
+        // Verificar que los botones estén funcionando
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ Página cargada correctamente');
+        });
+    </script>
+</body>
+</html>
