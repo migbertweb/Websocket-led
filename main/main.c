@@ -11,11 +11,27 @@
 
 #include "led_control.h"
 #include "websocket_server.h"
+#include "oled.h"
 
 static const char *TAG = "MAIN";
 
 void app_main(void)
 {
+        // 1. PRIMERO inicializar I2C
+    i2c_master_init();
+    ESP_LOGI(TAG, "I2C inicializado");
+    
+    // 2. LUEGO inicializar OLED
+    oled_init();
+    ESP_LOGI(TAG, "OLED inicializado");
+    
+    // 3. Mostrar splash screen
+    oled_show_splash_screen();
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    // 4. Mostrar pantalla de bienvenida
+    oled_show_welcome_screen();
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+
     // Inicializar NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -56,4 +72,13 @@ void app_main(void)
     start_websocket_server();
 
     ESP_LOGI(TAG, "✅ Sistema listo. Conectarse a la IP mostrada para controlar el LED");
+
+      while(1) {
+        // Actualizar pantalla OLED con estado del LED, IP y contador de pulsaciones
+        const char* ip_address = websocket_server_get_ip();
+
+       oled_show_combined_status(led_control_get_state(), ip_address);
+
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+    }
 }

@@ -3,10 +3,10 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <stdbool.h>  // <- AGREGAR ESTA LÍNEA
-#include "esp_err.h"
+#include "fonts.h"
+#include <stdbool.h>
 
-// Configuración I2C para ESP32-C3
+// Configuración I2C
 #define I2C_MASTER_SCL_IO           6
 #define I2C_MASTER_SDA_IO           5
 #define I2C_MASTER_NUM              I2C_NUM_0
@@ -28,14 +28,21 @@ void oled_clear(void);
 void oled_update(void);
 void oled_set_power(int on);
 
+// Funciones de dibujo
+void oled_draw_pixel(int x, int y);
+void oled_draw_line(int x0, int y0, int x1, int y1);
+void oled_draw_rect(int x, int y, int w, int h);
+void oled_draw_fill_rect(int x, int y, int w, int h);
+
 // Funciones de texto
 void oled_draw_text(int x, int y, const char *text);
 void oled_draw_text_centered(int line, const char *text);
 
-// Funciones específicas para nuestro proyecto
-void oled_show_wifi_connecting(void);
-void oled_show_wifi_connected(const char* ip);
-void oled_show_led_status(const char* ip, bool led_state);
-void oled_show_error(const char* message);
+// Utilidades
+void oled_show_splash_screen(void);
+void oled_show_welcome_screen(void);
 
+// Función principal para mostrar estados
+void oled_show_combined_status(bool button_pressed, const char* ip);
+                              
 #endif // OLED_H

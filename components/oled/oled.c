@@ -1,4 +1,6 @@
 #include "oled.h"
+#include "fonts.h"
+#include "led_control.h"
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -30,41 +32,6 @@ static const char *TAG = "OLED";
 
 // Buffer para la pantalla
 static uint8_t oled_buffer[SCREEN_WIDTH * (SCREEN_HEIGHT / 8)];
-
-// Font 5x7 básico (solo caracteres ASCII)
-static const uint8_t font_5x7[95][5] = {
-    {0x00, 0x00, 0x00, 0x00, 0x00}, // space
-    {0x00, 0x00, 0x5F, 0x00, 0x00}, // !
-    {0x00, 0x07, 0x00, 0x07, 0x00}, // "
-    // ... (aquí iría el font completo, pero para simplificar usaremos uno básico)
-    {0x7F, 0x41, 0x41, 0x41, 0x7F}, // A
-    {0x7F, 0x49, 0x49, 0x49, 0x36}, // B
-    {0x3E, 0x41, 0x41, 0x41, 0x22}, // C
-    {0x7F, 0x41, 0x41, 0x22, 0x1C}, // D
-    {0x7F, 0x49, 0x49, 0x49, 0x41}, // E
-    {0x7F, 0x09, 0x09, 0x09, 0x01}, // F
-    {0x3E, 0x41, 0x49, 0x49, 0x7A}, // G
-    {0x7F, 0x08, 0x08, 0x08, 0x7F}, // H
-    {0x00, 0x41, 0x7F, 0x41, 0x00}, // I
-    {0x20, 0x40, 0x41, 0x3F, 0x01}, // J
-    {0x7F, 0x08, 0x14, 0x22, 0x41}, // K
-    {0x7F, 0x40, 0x40, 0x40, 0x40}, // L
-    {0x7F, 0x02, 0x0C, 0x02, 0x7F}, // M
-    {0x7F, 0x04, 0x08, 0x10, 0x7F}, // N
-    {0x3E, 0x41, 0x41, 0x41, 0x3E}, // O
-    {0x7F, 0x09, 0x09, 0x09, 0x06}, // P
-    {0x3E, 0x41, 0x51, 0x21, 0x5E}, // Q
-    {0x7F, 0x09, 0x19, 0x29, 0x46}, // R
-    {0x46, 0x49, 0x49, 0x49, 0x31}, // S
-    {0x01, 0x01, 0x7F, 0x01, 0x01}, // T
-    {0x3F, 0x40, 0x40, 0x40, 0x3F}, // U
-    {0x1F, 0x20, 0x40, 0x20, 0x1F}, // V
-    {0x3F, 0x40, 0x38, 0x40, 0x3F}, // W
-    {0x63, 0x14, 0x08, 0x14, 0x63}, // X
-    {0x07, 0x08, 0x70, 0x08, 0x07}, // Y
-    {0x61, 0x51, 0x49, 0x45, 0x43}, // Z
-    // ... (agregar más caracteres según necesidad)
-};
 
 // Función privada para escribir comandos
 static void oled_write_cmd(uint8_t cmd) {
@@ -102,7 +69,6 @@ void i2c_master_init(void) {
     
     i2c_param_config(I2C_MASTER_NUM, &conf);
     i2c_driver_install(I2C_MASTER_NUM, conf.mode, 0, 0, 0);
-    ESP_LOGI(TAG, "I2C inicializado: SDA=%d, SCL=%d", I2C_MASTER_SDA_IO, I2C_MASTER_SCL_IO);
 }
 
 void oled_init(void) {
@@ -135,9 +101,6 @@ void oled_init(void) {
     oled_write_cmd(SSD1306_NORMALDISPLAY);
     oled_write_cmd(SSD1306_DISPLAYON);
     
-    oled_clear();
-    oled_update();
-    
     ESP_LOGI(TAG, "OLED 72x40 inicializado");
 }
 
@@ -167,7 +130,47 @@ void oled_draw_pixel(int x, int y) {
     oled_buffer[x + page * SCREEN_WIDTH] |= (1 << bit);
 }
 
+void oled_draw_line(int x0, int y0, int x1, int y1) {
+    int dx = abs(x1 - x0);
+    int dy = abs(y1 - y0);
+    int sx = (x0 < x1) ? 1 : -1;
+    int sy = (y0 < y1) ? 1 : -1;
+    int err = dx - dy;
+    
+    while (1) {
+        oled_draw_pixel(x0, y0);
+        if (x0 == x1 && y0 == y1) break;
+        int e2 = 2 * err;
+        if (e2 > -dy) {
+            err -= dy;
+            x0 += sx;
+        }
+        if (e2 < dx) {
+            err += dx;
+            y0 += sy;
+        }
+    }
+}
+
+void oled_draw_rect(int x, int y, int w, int h) {
+    oled_draw_line(x, y, x + w, y);
+    oled_draw_line(x + w, y, x + w, y + h);
+    oled_draw_line(x + w, y + h, x, y + h);
+    oled_draw_line(x, y + h, x, y);
+}
+
+void oled_draw_fill_rect(int x, int y, int w, int h) {
+    for (int i = x; i < x + w; i++) {
+        for (int j = y; j < y + h; j++) {
+            oled_draw_pixel(i, j);
+        }
+    }
+}
+
+// Función básica para dibujar texto
 void oled_draw_text(int x, int y, const char *text) {
+    const uint8_t (*font)[5] = font_5x7;
+    
     for (int i = 0; text[i] != '\0'; i++) {
         char c = text[i];
         if (c < 32 || c > 126) continue;
@@ -175,14 +178,11 @@ void oled_draw_text(int x, int y, const char *text) {
         int char_x = x + i * 6; // 5px ancho + 1px espacio
         if (char_x >= SCREEN_WIDTH) break;
         
-        // Obtener los datos del carácter
-        const uint8_t *char_data = font_5x7[c - 32];
+        const uint8_t *char_data = font[c - 32];
         
-        // Dibujar cada columna del carácter
         for (int col = 0; col < 5; col++) {
             uint8_t col_data = char_data[col];
             
-            // Dibujar cada fila (bit) del carácter
             for (int row = 0; row < 7; row++) {
                 if (col_data & (1 << row)) {
                     oled_draw_pixel(char_x + col, y + row);
@@ -192,85 +192,62 @@ void oled_draw_text(int x, int y, const char *text) {
     }
 }
 
+// Función para texto centrado
 void oled_draw_text_centered(int line, const char *text) {
-    int text_width = strlen(text) * 6; // 5px + 1px espacio
+    int text_width = strlen(text) * 6;
     int x = (SCREEN_WIDTH - text_width) / 2;
-    int y = line * 10; // 7px alto + 3px espacio
+    int y = line * 10;
     
     if (x < 0) x = 0;
     oled_draw_text(x, y, text);
 }
 
-// ==================== FUNCIONES ESPECÍFICAS DEL PROYECTO ====================
-
-void oled_show_wifi_connecting(void) {
-    oled_clear();
-    oled_draw_text_centered(1, "Conectando");
-    oled_draw_text_centered(2, "WiFi...");
-    oled_update();
-    ESP_LOGI(TAG, "OLED: Mostrando conexión WiFi");
-}
-
-void oled_show_wifi_connected(const char* ip) {
-    oled_clear();
-    oled_draw_text_centered(0, "WiFi OK!");
-    oled_draw_text_centered(1, "IP:");
+// Función para mostrar estado combinado (LED + Botón + IP)
+void oled_show_combined_status(bool button_pressed, const char* ip) {
+    char buffer[32];
     
-    // Mostrar la IP (puede necesitar truncarse si es muy larga)
-    char ip_display[16];
-    snprintf(ip_display, sizeof(ip_display), "%s", ip);
-    oled_draw_text_centered(2, ip_display);
-    
-    oled_draw_text_centered(3, "WebSocket");
-    oled_draw_text_centered(4, "Listo!");
-    
-    oled_update();
-    ESP_LOGI(TAG, "OLED: WiFi conectado - IP: %s", ip);
-}
-
-void oled_show_led_status(const char* ip, bool led_state) {
     oled_clear();
     
-    // Línea 1: IP abreviada
-    char ip_short[12];
-    // Mostrar solo los últimos segmentos de la IP para ahorrar espacio
-    const char *last_octet = strrchr(ip, '.');
-    if (last_octet) {
-        snprintf(ip_short, sizeof(ip_short), "IP:%s", last_octet + 1);
-    } else {
-        snprintf(ip_short, sizeof(ip_short), "IP:%s", ip);
-    }
-    oled_draw_text(0, 0, ip_short);
+    // Header con IP
+    oled_draw_text_centered(0, ip);
     
-    // Línea 2: Estado del LED
+    // Estado del LED
+    bool led_state = led_control_get_state();
     oled_draw_text(0, 10, "LED:");
+    oled_draw_text(30, 10, led_state ? "ON " : "OFF");
     if (led_state) {
-        oled_draw_text(30, 10, "ON ");
-        // Indicador visual del LED encendido
-        for (int i = 0; i < 4; i++) {
-            oled_draw_pixel(55 + i, 9);
-            oled_draw_pixel(55 + i, 10);
-        }
+        oled_draw_fill_rect(50, 9, 8, 8);
     } else {
-        oled_draw_text(30, 10, "OFF");
-        // Indicador visual del LED apagado (borde)
-        oled_draw_pixel(55, 9);
-        oled_draw_pixel(58, 9);
-        oled_draw_pixel(55, 10);
-        oled_draw_pixel(58, 10);
+        oled_draw_rect(50, 9, 8, 8);
     }
     
-    // Línea 3: Instrucciones
-    oled_draw_text(0, 20, "Web:");
-    oled_draw_text(0, 30, "Control");
+    // Estado del botón
+    oled_draw_text(0, 20, "BOTON:");
+    oled_draw_text(36, 20, button_pressed ? "PRESS" : "FREE");
+    if (button_pressed) {
+        oled_draw_fill_rect(75, 19, 4, 4);
+    } else {
+        oled_draw_rect(75, 19, 4, 4);
+    }
     
     oled_update();
 }
 
-void oled_show_error(const char* message) {
+// Pantalla de bienvenida
+void oled_show_welcome_screen(void) {
     oled_clear();
-    oled_draw_text_centered(1, "ERROR");
-    oled_draw_text_centered(2, message);
+    oled_draw_text_centered(0, "SISTEMA");
+    oled_draw_text_centered(1, "LED + WS");
+    oled_draw_text_centered(2, "ESP32-C3");
+    oled_draw_text_centered(3, "Listo!");
     oled_update();
-    ESP_LOGE(TAG, "OLED: Error - %s", message);
+}
+
+// Pantalla de inicio
+void oled_show_splash_screen(void) {
+    oled_clear();
+    oled_draw_text_centered(0, "INICIANDO");
+    oled_draw_text_centered(2, "SISTEMA");
+    oled_update();
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
 }

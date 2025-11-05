@@ -13,4 +13,6 @@ void wifi_init_sta(void);
  */
 void start_websocket_server(void);
 
+const char* websocket_server_get_ip(void);
+
 #endif

@@ -4,6 +4,7 @@
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "esp_spiffs.h"
+#include "esp_netif.h" // añadir si no está
 
 static const char *TAG = "WEB_SOCKET";
 static httpd_handle_t server = NULL;
@@ -263,4 +264,19 @@ void start_websocket_server(void)
     if (server == NULL) {
         ESP_LOGE(TAG, "Error al iniciar servidor WebSocket");
     }
+}
+
+static char s_ip_str[16];
+
+const char* websocket_server_get_ip(void)
+{
+    esp_netif_ip_info_t ip_info;
+    // Obtener handle del netif STA por su key por defecto
+    esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+    if (netif && esp_netif_get_ip_info(netif, &ip_info) == ESP_OK) {
+        snprintf(s_ip_str, sizeof(s_ip_str), IPSTR, IP2STR(&ip_info.ip));
+        return s_ip_str;
+    }
+    // Si no hay IP, devolver placeholder
+    return "0.0.0.0";
 }
