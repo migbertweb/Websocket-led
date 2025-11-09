@@ -10,47 +10,53 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+/*
+ * dht11.h
+ *
+ * Interfaz mínima para trabajar con un sensor DHT11.
+ * Proporciona la estructura de datos y funciones para inicializar y leer
+ * el sensor. Las operaciones de lectura son bloqueantes y usan busy-wait,
+ * por lo que deben ejecutarse en una tarea dedicada.
+ */
+
 /**
- * Structure containing readings and info about the dht11
- * @var dht11_pin the pin associated with the dht11
- * @var temperature last temperature reading
- * @var humidity last humidity reading 
-*/
-typedef struct
-{
+ * Estructura que guarda la configuración/lecturas del DHT11
+ * - dht11_pin: GPIO utilizado
+ * - temperature: última lectura de temperatura (°C)
+ * - humidity: última lectura de humedad (%%)
+ */
+typedef struct {
     gpio_num_t dht11_pin;
     float temperature;
     float humidity;
 } dht11_t;
 
 /**
- * @brief Initialize DHT11 sensor
- * @param dht11 Pointer to dht11_t structure
- * @return ESP_OK on success, ESP_FAIL on error
-*/
+ * Inicializa el sensor DHT11 (configura GPIO).
+ * @param dht11 Puntero a la estructura dht11_t con el pin configurado
+ * @return ESP_OK en éxito, o código de error ESP_ERR_*
+ */
 esp_err_t dht11_init(dht11_t *dht11);
 
 /**
- * @brief Wait on pin until it reaches the specified state
- * @return returns either the time waited or -1 in the case of a timeout
- * @param state state to wait for
- * @param timeout if counter reaches timeout the function returns -1
-*/
+ * Espera que el pin alcance un estado lógico (0 o 1).
+ * @return tiempo contado (microsegundos aproximados) o -1 en caso de timeout
+ */
 int wait_for_state(dht11_t dht11, int state, int timeout);
 
 /**
- * @brief Holds the pin low for the specified duration
- * @param hold_time_us time to hold the pin low for in microseconds
-*/
+ * Mantiene la línea en bajo durante `hold_time_us` microsegundos.
+ * Se usa para generar la señal de inicio hacia el sensor.
+ */
 void hold_low(dht11_t dht11, int hold_time_us);
 
 /**
- * @brief The function for reading temperature and humidity values from the dht11
- * @note  This function is blocking, ie: it forces the cpu to busy wait for the duration necessary to finish comms with the sensor.
- * @note  Wait for at least 2 seconds between reads 
- * @param connection_timeout the number of connection attempts before declaring a timeout
- * @return ESP_OK on success, ESP_FAIL on error
-*/
+ * Lee temperatura y humedad desde el sensor.
+ * Nota: función bloqueante (busy-wait). Esperar al menos 2s entre lecturas.
+ * @param dht11 Puntero a la estructura donde se almacenarán las lecturas
+ * @param connection_timeout Número de intentos de handshake antes de fallar
+ * @return ESP_OK en éxito, o código de error (ESP_ERR_TIMEOUT, ESP_ERR_INVALID_CRC, ...)
+ */
 esp_err_t dht11_read(dht11_t *dht11, int connection_timeout);
 
-#endif
+#endif /* _DHT_11 */
