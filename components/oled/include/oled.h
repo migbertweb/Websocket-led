@@ -43,6 +43,6 @@ void oled_show_splash_screen(void);
 void oled_show_welcome_screen(void);
 
 // Función principal para mostrar estados
-void oled_show_combined_status(bool button_pressed, const char* ip);
+void oled_show_combined_status(bool button_pressed, const char* ip, const char* dht_status);
                               
 #endif // OLED_H

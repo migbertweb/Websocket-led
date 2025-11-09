@@ -203,7 +203,7 @@ void oled_draw_text_centered(int line, const char *text) {
 }
 
 // Función para mostrar estado combinado (LED + Botón + IP)
-void oled_show_combined_status(bool button_pressed, const char* ip) {
+void oled_show_combined_status(bool button_pressed, const char* ip, const char* dht_status) {
     char buffer[32];
     
     oled_clear();
@@ -229,7 +229,7 @@ void oled_show_combined_status(bool button_pressed, const char* ip) {
     } else {
         oled_draw_rect(75, 19, 4, 4);
     }
-    
+     oled_draw_text_centered(3, dht_status);
     oled_update();
 }
 
