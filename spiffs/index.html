@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎛️ Control LED ESP32</h1>
+        <h1>🎛️ Control ESP32</h1>
         
         <div class="status-panel">
             <div class="status-item">
@@ -33,8 +33,35 @@
             </button>
         </div>
 
+        <!-- NUEVA SECCIÓN: Sensor DHT11 -->
+        <div class="sensor-panel">
+            <h2>🌡️ Sensor DHT11</h2>
+            <div class="sensor-data">
+                <div class="sensor-item">
+                    <span class="sensor-label">Temperatura:</span>
+                    <span id="temperatureValue" class="sensor-value">--.- °C</span>
+                </div>
+                <div class="sensor-item">
+                    <span class="sensor-label">Humedad:</span>
+                    <span id="humidityValue" class="sensor-value">--.- %</span>
+                </div>
+                <div class="sensor-item">
+                    <span class="sensor-label">Última actualización:</span>
+                    <span id="lastUpdate" class="sensor-value">--:--:--</span>
+                </div>
+            </div>
+            <div class="sensor-controls">
+                <button id="btnRefreshDHT" class="btn btn-sensor" onclick="requestDHTData()">
+                    🔄 Actualizar
+                </button>
+                <button id="btnAutoRefresh" class="btn btn-sensor" onclick="toggleAutoRefresh()">
+                    ⏰ Auto: OFF
+                </button>
+            </div>
+        </div>
+
         <div class="info">
-            <p>Conectado al ESP32 vía WebSocket - GPIO2</p>
+            <p>Conectado al ESP32 vía WebSocket - GPIO2 | DHT11 en GPIO4</p>
         </div>
     </div>
 
