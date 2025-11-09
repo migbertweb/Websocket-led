@@ -10,13 +10,15 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-/*
- * dht11.h
+/**
+ * @file dht11.h
+ * @brief Interfaz para el sensor DHT11 (lecturas de temperatura y humedad).
  *
- * Interfaz mínima para trabajar con un sensor DHT11.
- * Proporciona la estructura de datos y funciones para inicializar y leer
- * el sensor. Las operaciones de lectura son bloqueantes y usan busy-wait,
- * por lo que deben ejecutarse en una tarea dedicada.
+ * Las funciones de lectura son bloqueantes y usan busy-wait; deben ejecutarse
+ * en una tarea de FreeRTOS separada si se desean lecturas periódicas.
+ *
+ * Autor: migbertweb
+ * Fecha: 2025-11-09
  */
 
 /**

@@ -1,6 +1,17 @@
+/**
+ * @file fonts.c
+ * @brief Implementación de la fuente monoespaciada 5x7 y funciones de acceso.
+ *
+ * La tabla contiene los 95 caracteres imprimibles ASCII (32..126). Cada
+ * entrada tiene 5 bytes que representan columnas de 8 bits (se usan 7 filas).
+ *
+ * Autor: migbertweb
+ * Fecha: 2025-11-09
+ */
+
 #include "fonts.h"
 
-// Font 5x7 COMPLETO y CORREGIDO
+/* Tabla de glifos: cada fila corresponde a un carácter ASCII desde 32 hasta 126. */
 const uint8_t font_5x7[95][5] = {
     {0x00, 0x00, 0x00, 0x00, 0x00}, // 32: espacio
     {0x00, 0x00, 0x5F, 0x00, 0x00}, // 33: !
@@ -99,7 +110,9 @@ const uint8_t font_5x7[95][5] = {
     {0x08, 0x04, 0x08, 0x10, 0x08}  // 126: ~
 };
 
-// Funciones de acceso
+/*
+ * Funciones de acceso: devuelven punteros y dimensiones de la fuente.
+ */
 const uint8_t* fonts_get_font_5x7(void) {
     return (const uint8_t*)font_5x7;
 }

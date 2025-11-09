@@ -1,37 +1,73 @@
+/**
+ * @file websocket_server.c
+ * @brief Servidor HTTP con endpoint WebSocket para controlar un LED y
+ * servir la UI desde SPIFFS.
+ *
+ * Implementación que maneja:
+ *  - Endpoints estáticos: /, /style.css, /websocket.js
+ *  - WebSocket en /ws para recibir comandos: "ON", "OFF", "TOGGLE", "STATUS"
+ *
+ * Autor: migbertweb
+ * Fecha: 2025-11-09
+ */
+
 #include "websocket_server.h"
 #include "led_control.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "esp_spiffs.h"
-#include "esp_netif.h" // añadir si no está
+#include "esp_netif.h"
+#include "esp_event.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+
+/* Tag usado para logs */
 static const char *TAG = "WEB_SOCKET";
+
+/* Handle del servidor HTTPD (global para permitir stop si se quisiera) */
 static httpd_handle_t server = NULL;
 
-// Estructura para sesión WebSocket
+/*
+ * Estructura auxiliar (no utilizada activamente en esta versión) que muestra
+ * cómo se podría asociar contexto asíncrono por cliente/FD.
+ */
 struct async_resp_arg {
     httpd_handle_t hd;
     int fd;
 };
 
 // Handler para archivos estáticos desde SPIFFS
+/**
+ * @brief Sirve un archivo desde SPIFFS al cliente HTTP.
+ *
+ * @param req Puntero a la estructura de petición HTTP.
+ * @param filename Nombre del archivo dentro de /spiffs (sin el prefijo).
+ * @param content_type Tipo MIME a establecer en la respuesta.
+ * @return esp_err_t ESP_OK en éxito, otro código de error en fallo.
+ *
+ * Notas:
+ *  - Lee el archivo en bloques y usa httpd_resp_send_chunk para evitar
+ *    cargar todo el contenido en memoria.
+ */
 static esp_err_t serve_file(httpd_req_t *req, const char* filename, const char* content_type)
 {
     char filepath[64];
     snprintf(filepath, sizeof(filepath), "/spiffs/%s", filename);
-    
-    FILE* file = fopen(filepath, "r");
+
+    /* Abrir en modo binario por seguridad */
+    FILE* file = fopen(filepath, "rb");
     if (!file) {
         ESP_LOGE(TAG, "Archivo no encontrado: %s", filepath);
         httpd_resp_send_404(req);
         return ESP_FAIL;
     }
-    
-    // Establecer tipo de contenido
+
     httpd_resp_set_type(req, content_type);
-    
-    // Leer y enviar archivo en chunks
+
     char buffer[512];
     size_t read_bytes;
     while ((read_bytes = fread(buffer, 1, sizeof(buffer), file)) > 0) {
@@ -41,8 +77,9 @@ static esp_err_t serve_file(httpd_req_t *req, const char* filename, const char* 
             return ESP_FAIL;
         }
     }
-    
+
     fclose(file);
+    /* Terminar chunked response */
     httpd_resp_send_chunk(req, NULL, 0);
     ESP_LOGI(TAG, "Archivo servido: %s", filename);
     return ESP_OK;
@@ -67,79 +104,91 @@ static esp_err_t js_handler(httpd_req_t *req)
 }
 
 /// Maneja los mensajes WebSocket
+/**
+ * @brief Handler para el endpoint WebSocket (/ws).
+ *
+ * Recibe frames WebSocket de tipo texto con comandos simples:
+ *  - "ON"     -> enciende el LED
+ *  - "OFF"    -> apaga el LED
+ *  - "TOGGLE" -> alterna el estado del LED
+ *  - "STATUS" -> solicita el estado actual (sin cambiarlo)
+ *
+ * Responde con un mensaje de texto en formato "LED:ENCENDIDO" o "LED:APAGADO".
+ *
+ * @param req Petición HTTP (WebSocket)
+ * @return esp_err_t ESP_OK siempre que el handler procese correctamente la petición
+ */
 static esp_err_t handle_ws_req(httpd_req_t *req)
 {
+    /* Durante el handshake el método es HTTP_GET; devolver OK para aceptarlo */
     if (req->method == HTTP_GET) {
         ESP_LOGI(TAG, "Handshake WebSocket realizado");
         return ESP_OK;
     }
-    
+
     ESP_LOGI(TAG, "Mensaje WebSocket recibido");
-    
+
     httpd_ws_frame_t ws_pkt;
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
-    
-    // Primero obtener información del frame
+
+    /* Obtener header del frame (tipo y longitud) */
     esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Error al recibir info del frame: %s", esp_err_to_name(ret));
         return ret;
     }
-    
+
     ESP_LOGI(TAG, "Frame type: %d, len: %d", ws_pkt.type, ws_pkt.len);
-    
-    // Solo procesar frames de texto
+
     if (ws_pkt.type == HTTPD_WS_TYPE_TEXT && ws_pkt.len > 0) {
-        // Reservar memoria para el payload
+        /* Reservar buffer para payload + NUL terminator */
         uint8_t *buf = calloc(1, ws_pkt.len + 1);
         if (buf == NULL) {
             ESP_LOGE(TAG, "Error al asignar memoria");
             return ESP_ERR_NO_MEM;
         }
-        
+
         ws_pkt.payload = buf;
-        
-        // Recibir el payload completo
+
+        /* Leer payload completo */
         ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Error al recibir payload: %s", esp_err_to_name(ret));
             free(buf);
             return ret;
         }
-        
-        // Asegurarse de que el string termina en null
-        buf[ws_pkt.len] = '\0';
-        
-        // Dentro de handle_ws_req, después de recibir el comando:
-ESP_LOGI(TAG, "Comando recibido: %s", (char*)buf);
 
-// Procesar comandos
-if (strcmp((char*)buf, "ON") == 0) {
-    ESP_LOGI(TAG, "Encendiendo LED");
-    led_control_set_state(true);
-} else if (strcmp((char*)buf, "OFF") == 0) {
-    ESP_LOGI(TAG, "Apagando LED");
-    led_control_set_state(false);
-} else if (strcmp((char*)buf, "TOGGLE") == 0) {
-    ESP_LOGI(TAG, "Toggle LED");
-    led_control_toggle();
-} else if (strcmp((char*)buf, "STATUS") == 0) {
-    ESP_LOGI(TAG, "Solicitud de estado");
-    // No cambiar el estado, solo responder
-} else {
-    ESP_LOGW(TAG, "Comando desconocido: %s", (char*)buf);
-}
-        
+        /* Asegurar terminador NUL */
+        buf[ws_pkt.len] = '\0';
+        ESP_LOGI(TAG, "Comando recibido: %s", (char*)buf);
+
+        /* Procesar comando (comparaciones sencillas, case-sensitive) */
+        if (strcmp((char*)buf, "ON") == 0) {
+            ESP_LOGI(TAG, "Encendiendo LED");
+            led_control_set_state(true);
+        } else if (strcmp((char*)buf, "OFF") == 0) {
+            ESP_LOGI(TAG, "Apagando LED");
+            led_control_set_state(false);
+        } else if (strcmp((char*)buf, "TOGGLE") == 0) {
+            ESP_LOGI(TAG, "Toggle LED");
+            led_control_toggle();
+        } else if (strcmp((char*)buf, "STATUS") == 0) {
+            ESP_LOGI(TAG, "Solicitud de estado");
+            /* No cambiar estado, solo responder más abajo */
+        } else {
+            ESP_LOGW(TAG, "Comando desconocido: %s", (char*)buf);
+        }
+
         free(buf);
-        
-        // Enviar respuesta con el estado actual
+
+        /* Construir respuesta con estado actual */
         bool led_state = led_control_get_state();
         const char* estado = led_state ? "ENCENDIDO" : "APAGADO";
         char response[50];
         snprintf(response, sizeof(response), "LED:%s", estado);
-        
+
         ESP_LOGI(TAG, "Enviando estado: %s", response);
-        
+
         httpd_ws_frame_t resp_pkt = {
             .final = true,
             .fragmented = false,
@@ -147,7 +196,7 @@ if (strcmp((char*)buf, "ON") == 0) {
             .payload = (uint8_t*)response,
             .len = strlen(response)
         };
-        
+
         ret = httpd_ws_send_frame(req, &resp_pkt);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Error enviando respuesta: %s", esp_err_to_name(ret));
@@ -157,7 +206,7 @@ if (strcmp((char*)buf, "ON") == 0) {
     } else {
         ESP_LOGW(TAG, "Frame no es de texto o está vacío");
     }
-    
+
     return ESP_OK;
 }
 

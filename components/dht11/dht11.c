@@ -1,10 +1,12 @@
-/*
- * dht11.c
+/**
+ * @file dht11.c
+ * @brief Implementación para leer el sensor DHT11 (bit-banging GPIO).
  *
- * Implementación básica para leer el sensor DHT11 usando GPIO "bit-banging".
- * El protocolo DHT11 es temporalmente crítico: los tiempos de duración de
- * los pulsos determinan bits '0' o '1'. Esta implementación mantiene la
- * lógica original pero añade comentarios explicativos y formateo consistente.
+ * Nota: el protocolo DHT11 es temporalmente crítico. Esta implementación
+ * preserva la lógica original y añade comentarios y pequeñas aclaraciones.
+ *
+ * Autor: migbertweb
+ * Fecha: 2025-11-09
  */
 
 #include "dht11.h"

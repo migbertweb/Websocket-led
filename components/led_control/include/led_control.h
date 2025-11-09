@@ -4,7 +4,20 @@
 #include <stdbool.h>
 
 /**
- * @brief Inicializa el control del LED en GPIO2
+ * @file led_control.h
+ * @brief API para el control de un LED conectado a GPIO2.
+ *
+ * Proporciona inicialización y funciones para leer/modificar el estado
+ * del LED. La implementación mantiene un estado interno en RAM.
+ *
+ * Autor: migbertweb
+ * Fecha: 2025-11-09
+ */
+
+/**
+ * @brief Inicializa el control del LED en GPIO2.
+ *
+ * Configura el pin como salida y pone el LED en estado apagado.
  */
 void led_control_init(void);
 
@@ -25,4 +38,4 @@ void led_control_set_state(bool state);
  */
 void led_control_toggle(void);
 
-#endif
+#endif // LED_CONTROL_H
