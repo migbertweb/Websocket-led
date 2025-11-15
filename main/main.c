@@ -1,3 +1,24 @@
+/*
+ * Archivo: main.c
+ * 
+ * Descripción: Punto de entrada principal del sistema ESP32-C3. Inicializa todos los
+ * componentes hardware (I2C, OLED, LED, DHT11), configura WiFi, inicia el servidor
+ * WebSocket y crea las tareas para lectura periódica del sensor DHT11 y actualización
+ * de la pantalla OLED con el estado del sistema.
+ * 
+ * Autor: migbertweb
+ * Fecha: 2025-11-15
+ * Repositorio: https://github.com/migbertweb/Websocket-led
+ * Licencia: MIT License
+ * 
+ * Uso: Este archivo contiene la función app_main() que es el punto de entrada del
+ * programa después del bootloader. Coordina la inicialización de todos los componentes
+ * y crea las tareas de FreeRTOS necesarias para el funcionamiento del sistema.
+ * 
+ * Nota: Este proyecto usa Licencia MIT. Se recomienda (no obliga) mantener 
+ * derivados como código libre, especialmente para fines educativos.
+ */
+
 #include <stdio.h>
 #include <string.h>
 

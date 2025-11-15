@@ -1,3 +1,23 @@
+/*
+ * Archivo: led_control.c
+ * 
+ * Descripción: Módulo de control simple para un LED conectado al GPIO2 del ESP32-C3.
+ * Proporciona funciones para inicializar, encender, apagar, hacer toggle y consultar
+ * el estado actual del LED. Mantiene un estado interno para evitar lecturas innecesarias
+ * del GPIO.
+ * 
+ * Autor: migbertweb
+ * Fecha: 2025-11-15
+ * Repositorio: https://github.com/migbertweb/Websocket-led
+ * Licencia: MIT License
+ * 
+ * Uso: Este archivo implementa el control básico del LED utilizado para demostración
+ * de control remoto vía WebSocket. El LED se inicializa apagado al inicio del sistema.
+ * 
+ * Nota: Este proyecto usa Licencia MIT. Se recomienda (no obliga) mantener 
+ * derivados como código libre, especialmente para fines educativos.
+ */
+
 #include "led_control.h"
 #include "driver/gpio.h"
 #include "esp_log.h"

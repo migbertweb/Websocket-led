@@ -1,10 +1,22 @@
 /*
- * dht11.c
- *
- * Implementación básica para leer el sensor DHT11 usando GPIO "bit-banging".
- * El protocolo DHT11 es temporalmente crítico: los tiempos de duración de
- * los pulsos determinan bits '0' o '1'. Esta implementación mantiene la
- * lógica original pero añade comentarios explicativos y formateo consistente.
+ * Archivo: dht11.c
+ * 
+ * Descripción: Driver para el sensor DHT11 que implementa comunicación bit-banging
+ * usando GPIO. El protocolo DHT11 es temporalmente crítico: los tiempos de duración
+ * de los pulsos determinan bits '0' o '1'. Incluye funciones para inicializar el sensor,
+ * realizar lecturas de temperatura y humedad, y validar checksums.
+ * 
+ * Autor: migbertweb
+ * Fecha: 2025-11-15
+ * Repositorio: https://github.com/migbertweb/Websocket-led
+ * Licencia: MIT License
+ * 
+ * Uso: Este archivo proporciona las funciones necesarias para leer el sensor DHT11
+ * conectado al GPIO4. Las lecturas son bloqueantes (busy-wait) y deben ejecutarse
+ * en una tarea dedicada. Requiere al menos 2 segundos entre lecturas.
+ * 
+ * Nota: Este proyecto usa Licencia MIT. Se recomienda (no obliga) mantener 
+ * derivados como código libre, especialmente para fines educativos.
  */
 
 #include "dht11.h"

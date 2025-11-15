@@ -1,11 +1,22 @@
 /*
- * websocket_server.c
- *
- * Servidor HTTP + WebSocket simple para servir los archivos estáticos desde
- * SPIFFS y recibir comandos para controlar el LED y consultar el sensor DHT11.
- *
- * Nota: se mantiene la lógica original; aquí se mejora la legibilidad y se
- * agregan comentarios explicativos en español.
+ * Archivo: websocket_server.c
+ * 
+ * Descripción: Implementa un servidor HTTP con soporte WebSocket para servir archivos
+ * estáticos desde SPIFFS (HTML, CSS, JavaScript) y recibir comandos WebSocket para
+ * controlar el LED y consultar datos del sensor DHT11. Incluye inicialización de WiFi
+ * en modo STA (Station) y manejo de eventos de conexión/reconexión.
+ * 
+ * Autor: migbertweb
+ * Fecha: 2025-11-15
+ * Repositorio: https://github.com/migbertweb/Websocket-led
+ * Licencia: MIT License
+ * 
+ * Uso: Este archivo proporciona las funciones para inicializar WiFi, iniciar el servidor
+ * HTTP/WebSocket y manejar las solicitudes de archivos estáticos y mensajes WebSocket.
+ * Los comandos soportados son: ON, OFF, TOGGLE, STATUS, GET_DHT.
+ * 
+ * Nota: Este proyecto usa Licencia MIT. Se recomienda (no obliga) mantener 
+ * derivados como código libre, especialmente para fines educativos.
  */
 
 #include "websocket_server.h"

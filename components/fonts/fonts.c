@@ -1,3 +1,23 @@
+/*
+ * Archivo: fonts.c
+ * 
+ * Descripción: Define una fuente bitmap 5x7 píxeles para caracteres ASCII desde
+ * espacio (32) hasta tilde (126), utilizada por el driver OLED para mostrar texto.
+ * Incluye funciones de acceso para obtener la fuente y sus dimensiones (ancho y alto).
+ * 
+ * Autor: migbertweb
+ * Fecha: 2025-11-15
+ * Repositorio: https://github.com/migbertweb/Websocket-led
+ * Licencia: MIT License
+ * 
+ * Uso: Este archivo proporciona la fuente bitmap utilizada por las funciones de
+ * texto del driver OLED. Cada carácter ocupa 5 píxeles de ancho por 7 píxeles de alto,
+ * almacenado como un array de 5 bytes donde cada bit representa un píxel.
+ * 
+ * Nota: Este proyecto usa Licencia MIT. Se recomienda (no obliga) mantener 
+ * derivados como código libre, especialmente para fines educativos.
+ */
+
 #include "fonts.h"
 
 // Font 5x7 COMPLETO y CORREGIDO

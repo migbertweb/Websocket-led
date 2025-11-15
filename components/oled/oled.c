@@ -1,8 +1,22 @@
 /*
- * oled.c
- *
- * Driver simple para una pantalla SSD1306 modificada a 72x40 (pequeños OLEDs)
- * Con soporte para primitivas de dibujo, texto y pantallas de estado.
+ * Archivo: oled.c
+ * 
+ * Descripción: Driver para pantalla OLED SSD1306 configurada para resolución 72x40 píxeles.
+ * Implementa comunicación I2C, primitivas de dibujo (píxel, línea, rectángulo), funciones
+ * de texto usando fuentes bitmap 5x7, y pantallas predefinidas para mostrar estado del
+ * sistema (IP, LED, sensor DHT11). Incluye inicialización del bus I2C.
+ * 
+ * Autor: migbertweb
+ * Fecha: 2025-11-15
+ * Repositorio: https://github.com/migbertweb/Websocket-led
+ * Licencia: MIT License
+ * 
+ * Uso: Este archivo proporciona las funciones para controlar una pantalla OLED conectada
+ * por I2C (GPIO5 SDA, GPIO6 SCL, dirección 0x3C). Se utiliza para mostrar información
+ * del estado del sistema de forma local sin necesidad de la interfaz web.
+ * 
+ * Nota: Este proyecto usa Licencia MIT. Se recomienda (no obliga) mantener 
+ * derivados como código libre, especialmente para fines educativos.
  */
 
 #include "oled.h"
